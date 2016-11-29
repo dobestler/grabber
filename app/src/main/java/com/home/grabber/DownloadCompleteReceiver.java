@@ -1,26 +1,27 @@
 package com.home.grabber;
 
 import android.app.DownloadManager;
+import android.app.Notification;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
+import android.net.Uri;
 import android.os.Environment;
-import android.os.ParcelFileDescriptor;
 import android.util.Log;
 import android.webkit.MimeTypeMap;
 import android.widget.Toast;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+
+import static android.content.Context.NOTIFICATION_SERVICE;
 
 public class DownloadCompleteReceiver extends BroadcastReceiver {
 
     private static final String TAG = DownloadCompleteReceiver.class.getSimpleName();
+    private static final int NOTIFICATION_ID = 980000053;
 
     public DownloadCompleteReceiver() {
     }
@@ -48,9 +49,21 @@ public class DownloadCompleteReceiver extends BroadcastReceiver {
                     Log.d(TAG, "Download successful. extension=" + MimeTypeMap.getSingleton().getExtensionFromMimeType(type));
 
                     // rename file with proper file extension
-                    addProperFileExtension(context, uriString, type, manager, downloadId);
+                    File f1 = new File(uriString);
+                    String extension = MimeTypeMap.getSingleton().getExtensionFromMimeType(type);
+                    File f2 = new File(f1.getPath(), f1.getName() + "." + extension);
 
-                    // FIXME notification with VIEW intent
+//                    boolean success = renameFile(f1.getName(), f2.getName());
+//                    File file;
+//                    if (success) {
+//                        file = f2;
+//                    } else {
+//                        GrabberActivity.showToast(context, "Failed to rename the downloaded file to " + f2.getName());
+//                        file = f1;
+//                    }
+//                    triggerMediaScan(context, file);
+                    File file = f1;
+                    showNotification(context, file.getName());
                 } else {
                     Toast.makeText(context, "Download failed", Toast.LENGTH_LONG).show();
                     Log.w(TAG, "Download failed");
@@ -60,61 +73,52 @@ public class DownloadCompleteReceiver extends BroadcastReceiver {
                 Log.w(TAG, "Download failed");
             }
 
-            if (c != null) {
-                c.close();
-            }
+            c.close();
         }
     }
 
-    private void addProperFileExtension(final Context context, final String uriString, final String type, final DownloadManager manager, long downloadId) {
-    File f1 = new File(uriString);
-        File f2 = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS) + "/" +
-                f1.getName() + "." + MimeTypeMap.getSingleton().getExtensionFromMimeType(type));
+    private void triggerMediaScan(final Context context, final File file) {
+        //Broadcast the Media Scanner Intent to trigger it
+//        context.sendBroadcast(new Intent(Intent.ACTION_MEDIA_MOUNTED,
+//                Uri.parse("file://" + Environment.getExternalStorageDirectory())));
+        Intent intent = new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE);
+        intent.setData(Uri.fromFile(file));
+        context.sendBroadcast(intent);
+    }
 
-        ParcelFileDescriptor f1Fd = null;
-        InputStream f1InStream = null;
-        OutputStream f2OutStream = null;
-        try {
-            f1Fd = manager.openDownloadedFile(downloadId);
-            f1InStream = new FileInputStream(f1Fd.getFileDescriptor());
-            f2OutStream = new FileOutputStream(f2);
+    private void showNotification(final Context context, final String filename) {
+        Log.d(TAG, "showNotification | filename = " + filename);
 
-            byte[] buffer = new byte[1024];
-            int length;
+        // Open folder
+        Intent intent = new Intent(Intent.ACTION_VIEW);
+        Uri uri = Uri.parse(Environment.getExternalStoragePublicDirectory(GrabberActivity.DIRECTORY).getPath());
+        intent.setDataAndType(uri, "resource/folder");
 
-            while ((length = f1InStream.read(buffer)) > 0) {
-                f2OutStream.write(buffer, 0, length);
-            }
+        PendingIntent pIntent = PendingIntent.getActivity(context, (int) System.currentTimeMillis(), intent, 0);
+        Notification n = new Notification.Builder(context)
+                .setContentTitle("Download successful")
+                .setContentText("Open Download directory")
+                .setStyle(new Notification.BigTextStyle().bigText("Open Download directory\nFilename: " + filename))
+                .setSmallIcon(R.mipmap.ic_stat_teddy_bear_machine_white)
+                .setContentIntent(pIntent)
+                .setAutoCancel(true).build();
 
-            f2OutStream.flush();
+        NotificationManager notificationManager =
+                (NotificationManager) context.getSystemService(NOTIFICATION_SERVICE);
 
-            manager.remove(downloadId);
+        notificationManager.notify(NOTIFICATION_ID, n);
+    }
 
-        } catch (IOException e) {
-            Toast.makeText(context, "Renaming failed.", Toast.LENGTH_LONG).show();
-            Log.e(TAG, "Renaming failed", e);
-        } finally {
-            try {
-                if (f1InStream != null) {
-                    f1InStream.close();
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            try {
-                if (f1Fd != null) {
-                    f1Fd.close();
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            try {
-                if (f2OutStream != null) {
-                    f2OutStream.close();
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
+    private static boolean renameFile(String oldName, String newName) {
+        File dir = Environment.getExternalStoragePublicDirectory(GrabberActivity.DIRECTORY);
+        if (dir.exists()) {
+            File from = new File(dir, oldName);
+            File to = new File(dir, newName);
+            Log.d(TAG, "renameFile " + from + " -> " + to);
+            if (from.exists()) {
+                return from.renameTo(to);
             }
         }
+        return false;
     }
 }

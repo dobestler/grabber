@@ -1,4 +1,7 @@
 <resources>
     <string name="app_name">Grabber</string>
-    <string name="action_settings">Settings</string>
+    <string name="ok">Grab it</string>
+    <string name="cancel">Cancel</string>
+    <string name="info_title">Grab video</string>
+    <string name="info_description">Do you want to save the video to your Downloads folder?</string>
 </resources>
