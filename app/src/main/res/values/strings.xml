@@ -3,5 +3,6 @@
     <string name="ok">Grab it</string>
     <string name="cancel">Cancel</string>
     <string name="info_title">Grab video</string>
-    <string name="info_description">Do you want to save the video to your Downloads folder?</string>
+    <string name="info_description">Do you want to download the video to your Pictures folder?</string>
+    <string name="notification_action_cancel">Cancel</string>
 </resources>

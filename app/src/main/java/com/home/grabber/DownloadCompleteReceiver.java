@@ -18,6 +18,7 @@ import java.io.File;
 
 import static android.content.Context.NOTIFICATION_SERVICE;
 
+@Deprecated
 public class DownloadCompleteReceiver extends BroadcastReceiver {
 
     private static final String TAG = DownloadCompleteReceiver.class.getSimpleName();
@@ -77,7 +78,7 @@ public class DownloadCompleteReceiver extends BroadcastReceiver {
         }
     }
 
-    private void triggerMediaScan(final Context context, final File file) {
+    public static void triggerMediaScan(final Context context, final File file) {
         //Broadcast the Media Scanner Intent to trigger it
 //        context.sendBroadcast(new Intent(Intent.ACTION_MEDIA_MOUNTED,
 //                Uri.parse("file://" + Environment.getExternalStorageDirectory())));

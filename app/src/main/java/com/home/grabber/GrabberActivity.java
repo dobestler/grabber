@@ -1,12 +1,10 @@
 package com.home.grabber;
 
 import android.Manifest;
-import android.app.DownloadManager;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
@@ -16,10 +14,6 @@ import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.widget.Toast;
-
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Random;
 
 /**
  * Basically acts like a video player by listening to VIEW intents containing video data but stores
@@ -31,8 +25,6 @@ public class GrabberActivity extends AppCompatActivity {
     public static final String DIRECTORY = Environment.DIRECTORY_PICTURES + "/Grabber";
 
     private static final String TAG = GrabberActivity.class.getSimpleName();
-
-    private DownloadManager mDownloadManager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -51,8 +43,6 @@ public class GrabberActivity extends AppCompatActivity {
             finish();
             return;
         }
-
-        mDownloadManager = (DownloadManager) this.getSystemService(Context.DOWNLOAD_SERVICE);
 
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle(R.string.info_title);
@@ -104,55 +94,16 @@ public class GrabberActivity extends AppCompatActivity {
 
     private void download() {
         Intent intent = getIntent();
-        if (intent == null || intent.getData() == null) {
+        if (intent == null || intent.getData() == null || intent.getDataString().equals("")) {
             Log.w(TAG, "Ignored NULL intent or intent without data.");
             showToast(this, "I don't know what to grab. Please try again.");
             return;
         }
 
-        String urlString = intent.getData().toString();
-        if (!urlString.equals("")) {
-            try {
-
-                DownloadManager.Request request = new DownloadManager.Request(Uri.parse((urlString)));
-                request.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE);
-                request.setVisibleInDownloadsUi(true); //if your download is visible in history of downloads
-                request.allowScanningByMediaScanner();
-
-                String fileName = extractFileName(urlString);
-                String description = fileName + " from " + urlString;
-                Log.d(TAG, description);
-                request.setDescription(description);
-                request.setTitle("Grabbing");
-                request.setDestinationInExternalPublicDir(DIRECTORY, fileName);
-                mDownloadManager.enqueue(request);
-                showToast(this, "Grabbing...\nYou'll be notified once I'm done.");
-                finish();
-            } catch (Exception e) {
-                Log.e(TAG, "Requesting to download the file failed.", e);
-                showToast(this, "Could not request to download.");
-            }
-
-        }
+        String urlString = intent.getDataString();
+        startService(GrabberService.buildStartIntent(this, urlString));
+        finish();
     }
-
-    private static String extractFileName(String urlString) {
-        String queryString = urlString.substring(urlString.lastIndexOf("?") + 1);
-        Map<String, String> queryMap = getQueryMap(queryString);
-        return queryMap.containsKey("id") ? queryMap.get("id") : "video_" + new Random().nextLong();
-    }
-
-    private static Map<String, String> getQueryMap(String query) {
-        String[] params = query.split("&");
-        Map<String, String> map = new HashMap<>();
-        for (String param : params) {
-            String name = param.split("=")[0];
-            String value = param.split("=")[1];
-            map.put(name, value);
-        }
-        return map;
-    }
-
 
     public static void showToast(final Context context, final String message) {
         Toast.makeText(context, "Grabber: " + message, Toast.LENGTH_LONG).show();
