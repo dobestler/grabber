@@ -4,10 +4,10 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.util.Log;
 
-public class StateStorage {
+public class GrabberServiceStorage {
 
-    public static final String FILE_NAME = "TaskStateStorage";
-    private static final String TAG = StateStorage.class.getSimpleName();
+    public static final String FILE_NAME = "TaskState";
+    private static final String TAG = GrabberServiceStorage.class.getSimpleName();
 
     public int getRunningTasks(final Context context) {
         SharedPreferences sharedPref = context.getSharedPreferences(FILE_NAME, Context.MODE_PRIVATE);

@@ -39,7 +39,7 @@ public class GrabberActivity extends AppCompatActivity {
                 Log.e(TAG, "Could not find versionName", e);
                 versionName = "UNKNOWN";
             }
-            showToast(this, "Hello. My version is " + versionName + "\nPlease choose me to play a video file.");
+            showToast(this, "Hello. My version is " + versionName);
             finish();
             return;
         }
